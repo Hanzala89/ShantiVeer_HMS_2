@@ -1,0 +1,44 @@
+<aside class="dash-sidebar">
+    {% load static %}
+    <a href="{% url 'core:dashboard' %}" class="dash-sidebar-brand text-decoration-none" style="color:inherit">
+        <img src="{% static 'img/logo.jpeg' %}" alt="ShantiVeer Charitable Hospital" class="logo-icon" style="border-radius:50%;object-fit:cover">
+        <div>
+            <strong>SHANTIVEER</strong><br>
+            <small style="opacity:0.7;font-size:0.7rem">HOSPITAL</small>
+        </div>
+    </a>
+    <nav class="dash-sidebar-nav">
+        <a href="{% url 'core:dashboard' %}" class="{% if active_sidebar == 'dashboard' %}active{% endif %}"><i class="bi bi-speedometer2"></i> Dashboard</a>
+        <a href="{% url 'opd:registration' %}" class="{% if active_sidebar == 'opd' %}active{% endif %}"><i class="bi bi-person-plus"></i> OPD Registration</a>
+        <a href="{% url 'prescription:list' %}" class="{% if active_sidebar == 'prescription' %}active{% endif %}"><i class="bi bi-file-medical"></i> Prescription</a>
+
+        {# IPD — collapsible group #}
+        <a href="{% url 'ipd:patient_list' %}" class="{% if active_sidebar == 'ipd' %}active{% endif %}" data-bs-toggle="collapse" data-bs-target="#ipdMenu" style="display:flex;justify-content:space-between;align-items:center">
+            <span><i class="bi bi-hospital"></i> IPD</span>
+            <i class="bi bi-chevron-{% if active_sidebar == 'ipd' %}down{% else %}right{% endif %}" style="font-size:0.75rem"></i>
+        </a>
+        <div class="collapse {% if active_sidebar == 'ipd' %}show{% endif %}" id="ipdMenu">
+            <div class="dash-sidebar-sub">
+                <a href="{% url 'ipd:patient_list' %}"><i class="bi bi-list-ul"></i> Patient List</a>
+                <a href="{% url 'ipd:admission' %}"><i class="bi bi-file-earmark-plus"></i> Admission</a>
+                <a href="{% url 'ipd:payment' %}"><i class="bi bi-credit-card"></i> Payment</a>
+                <a href="{% url 'ipd:bill' %}"><i class="bi bi-receipt"></i> Bill</a>
+                <a href="{% url 'ipd:discharge_list' %}"><i class="bi bi-box-arrow-right"></i> Discharge</a>
+                <a href="{% url 'ipd:medicine' %}"><i class="bi bi-capsule"></i> Medicine</a>
+            </div>
+        </div>
+
+        <a href="{% url 'lab:investigation' %}" class="{% if active_sidebar == 'lab' %}active{% endif %}"><i class="bi bi-droplet"></i> Lab</a>
+        <a href="{% url 'pharmacy:items' %}" class="{% if active_sidebar == 'pharmacy' %}active{% endif %}"><i class="bi bi-capsule"></i> Pharmacy</a>
+        <a href="{% url 'masterdata:interpretation' %}" class="{% if active_sidebar == 'master' %}active{% endif %}"><i class="bi bi-database"></i> Master Data</a>
+        <a href="{% url 'income:daybook' %}" class="{% if active_sidebar == 'income' %}active{% endif %}"><i class="bi bi-currency-rupee"></i> Income / Daybook</a>
+        <a href="{% url 'uhid:update' %}" class="{% if active_sidebar == 'uhid' %}active{% endif %}"><i class="bi bi-person-badge"></i> UHID</a>
+        <a href="{% url 'core:bed_manage' %}" class="{% if active_sidebar == 'beds' %}active{% endif %}"><i class="bi bi-grid-3x2-gap"></i> Bed Management</a>
+        <a href="{% url 'core:notifications' %}" class="{% if active_sidebar == 'notifications' %}active{% endif %}"><i class="bi bi-bell"></i> Notifications{% if notification_count %} <span class="badge bg-danger">{{ notification_count }}</span>{% endif %}</a>
+        <a href="{% url 'accounts:change_password' %}" class="{% if active_sidebar == 'password' %}active{% endif %}"><i class="bi bi-key"></i> Change Password</a>
+        {% if user.is_staff %}
+        <a href="{% url 'core:backup' %}" class="{% if active_sidebar == 'backup' %}active{% endif %}" style="margin-top:0.5rem;border-top:1px solid rgba(255,255,255,0.08);padding-top:0.75rem"><i class="bi bi-shield-check"></i> Data Backup</a>
+        {% endif %}
+        <a href="{% url 'accounts:logout' %}"><i class="bi bi-box-arrow-right"></i> Logout</a>
+    </nav>
+</aside>
