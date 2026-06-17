@@ -29,7 +29,14 @@ class IPDAdmission(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.ipd_no:
-            n = IPDAdmission.objects.count() + 100
+            from django.db.models import Max
+            import re
+            max_row = IPDAdmission.objects.aggregate(m=Max('ipd_no'))['m']
+            if max_row:
+                nums = re.findall(r'\d+', max_row)
+                n = int(nums[-1]) + 1 if nums else IPDAdmission.objects.count() + 100
+            else:
+                n = 100
             self.ipd_no = f'IPD{n}'
         super().save(*args, **kwargs)
 

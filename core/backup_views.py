@@ -22,19 +22,42 @@ def admin_only(user):
 
 def _dump_database(dump_path: Path) -> str:
     """
-    Dump the configured database (SQLite or MySQL) to dump_path.
+    Dump the configured database (PostgreSQL or MySQL) to dump_path.
     Returns the archive name to use for the dump inside the backup zip.
     Raises RuntimeError/subprocess.CalledProcessError on failure.
     """
     db_cfg = settings.DATABASES['default']
     engine = db_cfg.get('ENGINE', '')
 
-    if 'sqlite3' in engine:
-        # SQLite: the database is a single file — just copy it.
-        import shutil
-        src = Path(db_cfg['NAME'])
-        shutil.copy2(src, dump_path)
-        return 'database/dump.sqlite3'
+    if 'postgresql' in engine or 'postgis' in engine:
+        env = os.environ.copy()
+        if db_cfg.get('PASSWORD'):
+            env['PGPASSWORD'] = db_cfg['PASSWORD']
+
+        cmd = [
+            'pg_dump',
+            '--host', db_cfg.get('HOST', 'localhost'),
+            '--port', str(db_cfg.get('PORT', '5432')),
+            '--username', db_cfg.get('USER', 'postgres'),
+            '--dbname', db_cfg.get('NAME', 'postgres'),
+            '--file', str(dump_path),
+            '--no-password',
+        ]
+
+        result = subprocess.run(
+            cmd,
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=300,
+        )
+
+        if result.returncode != 0:
+            raise RuntimeError(
+                f'pg_dump exited with code {result.returncode}. '
+                f'stderr: {result.stderr.strip()}'
+            )
+        return 'database/dump.sql'
 
     elif 'mysql' in engine:
         env = os.environ.copy()
@@ -55,7 +78,7 @@ def _dump_database(dump_path: Path) -> str:
             env=env,
             capture_output=True,
             text=True,
-            timeout=300,  # 5-minute timeout
+            timeout=300,
         )
 
         if result.returncode != 0:
@@ -116,16 +139,15 @@ def _do_backup(user, backup_type='manual'):
                 # Backup manifest
                 db_cfg = settings.DATABASES['default']
                 engine = db_cfg.get('ENGINE', '')
-                if 'sqlite3' in engine:
-                    restore_note = (
-                        "To restore:\n"
-                        "  Stop the app, then copy database/dump.sqlite3 over\n"
-                        "  your database/ShantiVeer_db.sqlite3 file.\n"
-                    )
-                else:
+                if 'mysql' in engine:
                     restore_note = (
                         "To restore:\n"
                         "  mysql --host HOST --port PORT --user USER -p DBNAME < database/dump.sql\n"
+                    )
+                else:
+                    restore_note = (
+                        "To restore (PostgreSQL):\n"
+                        "  psql --host HOST --port PORT --username USER --dbname DBNAME < database/dump.sql\n"
                     )
                 manifest = (
                     f"ShantiVeer HMS Backup\n"

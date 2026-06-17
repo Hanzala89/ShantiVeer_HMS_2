@@ -14,16 +14,23 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'ShantiVeer-hms-dev-key-change-in-production')
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() == 'true'
 
-# Development helper: allow demo password/admin reset workflows to run locally
-# without requiring DJANGO_DEBUG=true in .env.
-ALLOW_DEMO_SETUP = os.environ.get('ALLOW_DEMO_SETUP', 'true').lower() == 'true'
+ALLOW_DEMO_SETUP = os.environ.get('ALLOW_DEMO_SETUP', 'false').lower() == 'true'
 
-# FIXED: removed wildcard '*' from default — only safe for local dev
 _raw_hosts = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1')
 ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(',') if h.strip()]
 
-# Ensure local development works even if ALLOWED_HOSTS in .env is incomplete
-ALLOWED_HOSTS = list(dict.fromkeys(ALLOWED_HOSTS + ['127.0.0.1', 'localhost']))
+if DEBUG:
+    ALLOWED_HOSTS = list(dict.fromkeys(ALLOWED_HOSTS + ['127.0.0.1', 'localhost']))
+
+# Allow all Vercel subdomains
+ALLOWED_HOSTS += ['.vercel.app']
+
+# CSRF: trust Vercel HTTPS origins
+CSRF_TRUSTED_ORIGINS = [
+    h for h in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if h.strip()
+]
+if not CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app']
 
 # Security headers (production only)
 if not DEBUG:
@@ -36,6 +43,7 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = os.environ.get('SECURE_SSL_REDIRECT', 'False').lower() == 'true'
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 else:
     X_FRAME_OPTIONS = 'SAMEORIGIN'
 
@@ -43,7 +51,7 @@ SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_AGE = 28800  # 8 hours
 
-# ─── Check optional packages ─────────────────────────────────────────────────
+# ─── Optional packages ───────────────────────────────────────────────────────
 try:
     import whitenoise
     _WHITENOISE = True
@@ -108,48 +116,39 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'ShantiVeer_hms.wsgi.application'
 
-# ─── Database (SQLite by default, MySQL optional) ───────────────────────────
-USE_MYSQL = os.environ.get('USE_MYSQL', 'False').lower() == 'true'
+# ─── Database — PostgreSQL only (via DATABASE_URL) ───────────────────────────
+# SQLite has been removed. DATABASE_URL must always be set.
+# For local dev: copy the Neon connection string into your .env file.
+# Example: DATABASE_URL=postgresql://user:pass@host/dbname?sslmode=require
 
-if USE_MYSQL:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.mysql',
-            'NAME': os.environ.get('DB_NAME', 'ShantiVeer_db'),
-            'USER': os.environ.get('DB_USER', 'root'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-            'HOST': os.environ.get('DB_HOST', 'localhost'),
-            'PORT': os.environ.get('DB_PORT', '3306'),
-            'CONN_MAX_AGE': 60,
-            'OPTIONS': {
-                'charset': 'utf8mb4',
-            },
-        }
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'database' / 'ShantiVeer_db.sqlite3',
-        }
-    }
+_database_url = os.environ.get('DATABASE_URL', '')
+
+if not _database_url:
+    raise RuntimeError(
+        'DATABASE_URL environment variable is not set.\n'
+        'Set it in your .env file (local dev) or in Vercel environment variables.\n'
+        'Get a free PostgreSQL database at https://neon.tech'
+    )
+
+try:
+    import dj_database_url
+except ImportError:
+    raise ImportError(
+        'dj-database-url is not installed. Run: pip install dj-database-url psycopg2-binary'
+    )
+
+DATABASES = {
+    'default': dj_database_url.config(
+        default=_database_url,
+        conn_max_age=600,
+        conn_health_checks=True,
+        ssl_require=True,
+    )
+}
 
 # ─── Cache ───────────────────────────────────────────────────────────────────
-# PRODUCTION NOTE: LocMemCache is per-process — brute-force counters and OTP
-# tokens will NOT be shared across multiple Gunicorn workers.
-# For production with 2+ workers, switch to Redis:
-#
-#   pip install django-redis
-#
-#   CACHES = {
-#       'default': {
-#           'BACKEND': 'django_redis.cache.RedisCache',
-#           'LOCATION': os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/1'),
-#           'OPTIONS': {'CLIENT_CLASS': 'django_redis.client.DefaultClient'},
-#       }
-#   }
-#
-# Set REDIS_URL in your .env to enable this.
+# Set REDIS_URL (Upstash free tier) for OTP and brute-force protection
+# to persist correctly across Vercel serverless invocations.
 _redis_url = os.environ.get('REDIS_URL', '')
 
 if _redis_url:
@@ -166,8 +165,7 @@ if _redis_url:
         import warnings
         warnings.warn(
             'REDIS_URL is set but django-redis is not installed. '
-            'Falling back to LocMemCache — brute-force/OTP state will not '
-            'be shared across workers. Run: pip install django-redis',
+            'Falling back to LocMemCache. Run: pip install django-redis',
             RuntimeWarning,
             stacklevel=1,
         )
@@ -235,14 +233,11 @@ REST_FRAMEWORK = {
 }
 
 # ─── Hospital Info ────────────────────────────────────────────────────────────
-HOSPITAL_NAME = os.environ.get('HOSPITAL_NAME', 'ABC Hospital')
-HOSPITAL_ADDRESS = os.environ.get('HOSPITAL_ADDRESS', 'Main Road, Thana Bhawan, Near Bus Stand')
+HOSPITAL_NAME = os.environ.get('HOSPITAL_NAME', 'ShantiVeer Hospital')
+HOSPITAL_ADDRESS = os.environ.get('HOSPITAL_ADDRESS', 'Main Road, City')
 HOSPITAL_PHONE = os.environ.get('HOSPITAL_PHONE', '9876543210')
 
 # ─── Email ────────────────────────────────────────────────────────────────────
-# FIXED: default is now smtp so OTP login works out of the box once
-# EMAIL_HOST_USER / EMAIL_HOST_PASSWORD are set in .env.
-# Falls back to console only in DEBUG mode so dev still works without SMTP.
 _default_email_backend = (
     'django.core.mail.backends.console.EmailBackend'
     if DEBUG
@@ -257,20 +252,37 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', '')
 PASSWORD_RESET_TIMEOUT = 86400
 
-# Warn loudly at startup if production email isn't configured
 if not DEBUG and not EMAIL_HOST_USER:
     import warnings
     warnings.warn(
         'EMAIL_HOST_USER is not set. OTP-based login and password reset '
-        'will not work in production. Set EMAIL_HOST_USER and '
-        'EMAIL_HOST_PASSWORD in your environment.',
+        'will not work in production.',
         RuntimeWarning,
         stacklevel=1,
     )
 
 # ─── Logging ─────────────────────────────────────────────────────────────────
-logs_dir = BASE_DIR / 'logs'
-logs_dir.mkdir(exist_ok=True)
+_is_vercel = bool(os.environ.get('VERCEL', ''))
+
+_log_handlers = ['console']
+_handler_config: dict = {
+    'console': {
+        'class': 'logging.StreamHandler',
+        'formatter': 'verbose',
+    },
+}
+
+if not _is_vercel:
+    logs_dir = BASE_DIR / 'logs'
+    logs_dir.mkdir(exist_ok=True)
+    _log_handlers.append('file')
+    _handler_config['file'] = {
+        'class': 'logging.handlers.RotatingFileHandler',
+        'filename': str(logs_dir / 'hms.log'),
+        'maxBytes': 5 * 1024 * 1024,
+        'backupCount': 5,
+        'formatter': 'verbose',
+    }
 
 LOGGING = {
     'version': 1,
@@ -281,31 +293,19 @@ LOGGING = {
             'style': '{',
         },
     },
-    'handlers': {
-        'console': {
-            'class': 'logging.StreamHandler',
-            'formatter': 'verbose',
-        },
-        'file': {
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': logs_dir / 'hms.log',
-            'maxBytes': 5 * 1024 * 1024,
-            'backupCount': 5,
-            'formatter': 'verbose',
-        },
-    },
+    'handlers': _handler_config,
     'root': {
         'handlers': ['console'],
         'level': 'WARNING',
     },
     'loggers': {
         'django': {
-            'handlers': ['console', 'file'],
+            'handlers': _log_handlers,
             'level': os.environ.get('DJANGO_LOG_LEVEL', 'WARNING'),
             'propagate': False,
         },
         'core': {
-            'handlers': ['console', 'file'],
+            'handlers': _log_handlers,
             'level': 'INFO',
             'propagate': False,
         },

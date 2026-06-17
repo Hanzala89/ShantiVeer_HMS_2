@@ -143,13 +143,16 @@ def forgot_password_view(request):
                 reset_url = request.build_absolute_uri(
                     reverse_lazy('accounts:password_reset_confirm', kwargs={'uidb64': uid, 'token': token})
                 )
-                send_mail(
-                    subject='SantiVeer HMS — Password Reset',
-                    message=f'Click to reset your password:\n{reset_url}\n\nLink expires in 24 hours.',
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[user.email],
-                    fail_silently=True,
-                )
+                try:
+                    send_mail(
+                        subject='SantiVeer HMS — Password Reset',
+                        message=f'Click to reset your password:\n{reset_url}\n\nLink expires in 24 hours.',
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[user.email],
+                        fail_silently=False,
+                    )
+                except Exception as e:
+                    logger.error('Password reset email failed for user %s: %s', user.username, e)
         messages.success(request, 'If that email is registered, a password reset link has been sent.')
         return redirect('accounts:password_reset_done')
     return render(request, 'accounts/forgot_password.html', {'form': form})

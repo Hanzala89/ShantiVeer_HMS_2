@@ -33,7 +33,14 @@ class LabInvestigation(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.bill_no:
-            n = LabInvestigation.objects.count() + 1
+            from django.db.models import Max
+            import re
+            max_row = LabInvestigation.objects.aggregate(m=Max('bill_no'))['m']
+            if max_row:
+                nums = re.findall(r'\d+', max_row)
+                n = int(nums[-1]) + 1 if nums else LabInvestigation.objects.count() + 1
+            else:
+                n = 1
             self.bill_no = f'LAB{n:03d}'
         super().save(*args, **kwargs)
 

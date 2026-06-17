@@ -31,7 +31,13 @@ class Patient(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.uhid:
-            self.uhid = str(Patient.objects.count() + 3490)
+            # Use database MAX to avoid race condition from count()
+            from django.db.models import Max
+            max_val = Patient.objects.aggregate(m=Max('uhid'))['m']
+            if max_val and str(max_val).isdigit():
+                self.uhid = str(int(max_val) + 1)
+            else:
+                self.uhid = str(Patient.objects.count() + 3490)
         super().save(*args, **kwargs)
 
     @property

@@ -21,14 +21,14 @@ wheels/
 # Django
 *.log
 local_settings.py
-ShantiVeer_db.sqlite3
-database/ShantiVeer_db.sqlite3
-staticfiles_collected/
+database/
 media/
 backups/
 logs/
 
-# Environment
+# staticfiles_collected is intentionally NOT ignored — Vercel needs it.
+
+# Environment — never commit secrets
 .env
 .env.local
 .venv
