@@ -70,6 +70,10 @@ def login_view(request):
 
             if user.email:
                 cfg = TwoFactorConfig(enabled=True)
+                # Allow disabling 2FA via environment variable (e.g. while setting up email)
+                import os
+                if os.environ.get('DISABLE_2FA', '').lower() == 'true':
+                    cfg = TwoFactorConfig(enabled=False)
                 if cfg.enabled:
                     otp = generate_otp(user_id=user.id, ttl_seconds=cfg.otp_ttl_seconds, length=cfg.otp_length)
                     send_otp_email(to_email=user.email, otp=otp)
