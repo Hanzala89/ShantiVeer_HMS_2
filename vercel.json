@@ -2,29 +2,22 @@
   "version": 2,
   "builds": [
     {
-      "src": "ShantiVeer_hms/wsgi.py",
+      "src": "api/index.py",
       "use": "@vercel/python",
       "config": {
         "maxLambdaSize": "50mb",
         "runtime": "python3.12"
-      }
-    },
-    {
-      "src": "build_vercel.sh",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "staticfiles_collected"
       }
     }
   ],
   "routes": [
     {
       "src": "/static/(.*)",
-      "dest": "/static/$1"
+      "dest": "/staticfiles_collected/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "ShantiVeer_hms/wsgi.py"
+      "dest": "api/index.py"
     }
   ],
   "env": {
