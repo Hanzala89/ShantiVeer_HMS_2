@@ -51,12 +51,8 @@ SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
 SESSION_COOKIE_AGE = 28800  # 8 hours
 
-# ─── Optional packages ───────────────────────────────────────────────────────
-try:
-    import whitenoise
-    _WHITENOISE = True
-except ImportError:
-    _WHITENOISE = False
+# ─── WhiteNoise — always enabled (it's in requirements.txt) ──────────────────
+_WHITENOISE = True
 
 # ─── Apps ────────────────────────────────────────────────────────────────────
 INSTALLED_APPS = [
@@ -202,8 +198,8 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'statics']
 STATIC_ROOT = BASE_DIR / 'staticfiles_collected'
 
-if _WHITENOISE:
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# WhiteNoise serves compressed, hashed static files
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
