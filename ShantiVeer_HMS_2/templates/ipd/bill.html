@@ -1,0 +1,15 @@
+{% extends 'base_ipd.html' %}
+{% block title %}IPD Total Bill{% endblock %}
+{% block page_title %}IPD Total Bill{% endblock %}
+{% block content %}
+<div class="page-container"><div class="form-card">
+    <h2>IPD Total Bill</h2>
+    <form method="get" class="row g-2 mb-3"><div class="col-md-3"><input name="ipd_no" class="form-control" placeholder="Enter IPD No"></div><div class="col-auto"><button class="btn-cyan">Generate Bill</button></div></form>
+    {% if bill %}
+    <table class="hms-table"><thead><tr><th>Description</th><th>Amount (₹)</th></tr></thead>
+    <tbody>{% for item in bill.items %}<tr><td>{{ item.desc }}</td><td>{{ item.amount }}</td></tr>{% endfor %}
+    <tr class="fw-bold"><td>Total</td><td>₹{{ bill.total }}</td></tr></tbody></table>
+    <a href="#" class="btn btn-warning mt-2" onclick="window.print()">Print Bill</a>
+    {% endif %}
+</div></div>
+{% endblock %}

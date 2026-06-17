@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html><head><title>Prescription Print</title>
+<style>body{font-family:Arial;max-width:700px;margin:2rem auto;padding:1rem}h1{text-align:center;color:#1e40af}.header{border-bottom:2px solid #1e40af;padding-bottom:1rem;margin-bottom:1rem}@media print{.no-print{display:none}}</style>
+</head><body>
+<div class="header"><h1>ShantiVeer Hospital</h1><p style="text-align:center">Prescription</p></div>
+<p><strong>Patient:</strong> {{ record.name }} | <strong>OPD:</strong> {{ record.opd_no }} | <strong>Date:</strong> {{ record.date }}</p>
+<p><strong>Diagnosis:</strong> {{ record.diagnosis|default:"—" }}</p>
+<pre style="font-family:inherit;white-space:pre-wrap">{{ record.medicines|default:"—" }}</pre>
+<p><strong>Advice:</strong> {{ record.advice|default:"—" }}</p>
+<button class="no-print" onclick="window.print()">Print</button>
+</body></html>

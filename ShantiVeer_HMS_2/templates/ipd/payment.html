@@ -1,0 +1,20 @@
+{% extends 'base_ipd.html' %}
+{% block title %}IPD Payment{% endblock %}
+{% block page_title %}IPD Payment{% endblock %}
+{% block content %}
+<div class="page-container"><div class="form-card">
+    <h2>IPD Payment Receipt</h2>
+    <form method="post">{% csrf_token %}
+        <div class="row g-2">
+            <div class="col-md-2"><label class="small">IPD No</label><input name="ipd_no" class="form-control" required></div>
+            <div class="col-md-3"><label class="small">Patient Name</label><input name="patient_name" class="form-control"></div>
+            <div class="col-md-2"><label class="small">Amount</label><input type="number" name="amount" class="form-control" step="0.01"></div>
+            <div class="col-md-2"><label class="small">Payment Mode</label><select name="mode" class="form-select"><option>Cash</option><option>UPI</option><option>Card</option></select></div>
+            <div class="col-md-3"><label class="small">Remarks</label><input name="remarks" class="form-control"></div>
+        </div>
+        <button type="submit" class="btn-save mt-3">Save Payment</button>
+    </form>
+    <table class="hms-table mt-4"><thead><tr><th>IPD</th><th>Patient</th><th>Amount</th><th>Mode</th><th>Date</th></tr></thead>
+    <tbody>{% for p in payments %}<tr><td>{{ p.ipd_no }}</td><td>{{ p.name }}</td><td>₹{{ p.amount }}</td><td>{{ p.mode }}</td><td>{{ p.date }}</td></tr>{% endfor %}</tbody></table>
+</div></div>
+{% endblock %}
