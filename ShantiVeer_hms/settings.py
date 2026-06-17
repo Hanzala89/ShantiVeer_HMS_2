@@ -143,7 +143,7 @@ DATABASES = {
 }
 
 # ─── Cache ───────────────────────────────────────────────────────────────────
-# Set REDIS_URL (Upstash free tier) for OTP and brute-force protection
+# Set REDIS_URL (Upstash free tier) for brute-force login protection
 # to persist correctly across Vercel serverless invocations.
 _redis_url = os.environ.get('REDIS_URL', '')
 
@@ -251,7 +251,7 @@ PASSWORD_RESET_TIMEOUT = 86400
 if not DEBUG and not EMAIL_HOST_USER:
     import warnings
     warnings.warn(
-        'EMAIL_HOST_USER is not set. OTP-based login and password reset '
+        'EMAIL_HOST_USER is not set. Password reset emails '
         'will not work in production.',
         RuntimeWarning,
         stacklevel=1,

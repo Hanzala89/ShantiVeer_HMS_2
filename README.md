@@ -50,7 +50,7 @@ Visit: http://127.0.0.1:8000
 
 ### Step 2 — Set up a free Redis cache (Upstash)
 
-> Required for OTP login and brute-force protection to work across serverless invocations.
+> Required for brute-force protection to work across serverless invocations.
 
 1. Go to [https://upstash.com](https://upstash.com) and create a free account
 2. Create a new Redis database → copy the **REDIS_URL** (starts with `rediss://...`)
@@ -163,10 +163,9 @@ The backup system creates a ZIP of the database stored in `backups/`. Not availa
 
 ## Security Features
 
-- Two-Factor Authentication (Email OTP) on every login
+- Username & password authentication on every login
 - Brute-force login protection (rate limiting by IP)
 - CSRF protection on all forms
-- Cryptographically secure OTP generation
 - Path traversal protection on backup downloads
 - Security headers (HSTS, X-Frame-Options, etc.) in production
 - Session expiry after 8 hours

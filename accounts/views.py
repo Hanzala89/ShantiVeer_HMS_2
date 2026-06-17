@@ -18,9 +18,6 @@ from django.conf import settings
 from django.core.cache import cache
 
 from .forms import StyledLoginForm, ForgotPasswordForm, StyledPasswordChangeForm, StyledSetPasswordForm, ChangeEmailForm
-from .twofactor import TwoFactorConfig
-from core.twofactor import generate_otp, get_cached_otp, clear_cached_otp, send_otp_email
-from django.contrib.auth import get_user_model
 
 logger = logging.getLogger(__name__)
 
@@ -68,19 +65,6 @@ def login_view(request):
             user = form.get_user()
             _clear_failures(ip)
 
-            if user.email:
-                cfg = TwoFactorConfig(enabled=True)
-                # Allow disabling 2FA via environment variable (e.g. while setting up email)
-                import os
-                if os.environ.get('DISABLE_2FA', '').lower() == 'true':
-                    cfg = TwoFactorConfig(enabled=False)
-                if cfg.enabled:
-                    otp = generate_otp(user_id=user.id, ttl_seconds=cfg.otp_ttl_seconds, length=cfg.otp_length)
-                    send_otp_email(to_email=user.email, otp=otp)
-                    request.session['pending_2fa_username'] = user.username
-                    messages.info(request, 'Enter the verification code sent to your email.')
-                    return redirect('accounts:login_2fa')
-
             login(request, user)
             messages.success(request, f'Welcome back, {user.get_full_name() or user.username}!')
             return redirect('core:home')
@@ -88,43 +72,6 @@ def login_view(request):
             _record_failure(ip)
 
     return render(request, 'accounts/login.html', {'form': form})
-
-
-def login_2fa_view(request):
-    """Step 2: Verify OTP."""
-    cfg = TwoFactorConfig(enabled=True)
-
-    pending_username = request.session.get('pending_2fa_username')
-    if not pending_username:
-        return redirect('accounts:login')
-
-    AuthUser = get_user_model()
-    user = AuthUser.objects.filter(username=pending_username).first()
-    if not user:
-        request.session.pop('pending_2fa_username', None)
-        return redirect('accounts:login')
-
-    if request.method == 'POST':
-        if request.POST.get('resend'):
-            if user.email:
-                otp = generate_otp(user_id=user.id, ttl_seconds=cfg.otp_ttl_seconds, length=cfg.otp_length)
-                send_otp_email(to_email=user.email, otp=otp)
-                messages.info(request, 'A new verification code has been sent.')
-            return redirect('accounts:login_2fa')
-
-        otp_in = (request.POST.get('otp') or '').strip()
-        cached = get_cached_otp(user_id=user.id)
-
-        if cached and otp_in == cached:
-            clear_cached_otp(user_id=user.id)
-            login(request, user)
-            request.session.pop('pending_2fa_username', None)
-            messages.success(request, 'Verification successful. Welcome!')
-            return redirect('core:home')
-
-        messages.error(request, 'Invalid or expired verification code.')
-
-    return render(request, 'accounts/login_2fa.html', {'username': pending_username})
 
 
 def logout_view(request):
