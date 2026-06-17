@@ -1,0 +1,70 @@
+{% extends 'base_cyan.html' %}
+{% block title %}Lab Investigation{% endblock %}
+{% block page_title %}Lab Investigation{% endblock %}
+{% block content %}
+<div class="p-2">
+    <div class="d-flex justify-content-end mb-2">
+        <div class="search-bar-row" style="width:auto">
+            <label>Enter UHID:</label>
+            <input type="text" class="form-control form-control-sm" style="width:120px">
+            <button class="btn btn-primary btn-sm">Search</button>
+        </div>
+    </div>
+    <form method="post" id="labForm">
+        {% csrf_token %}
+        <div class="lab-layout">
+            <div>
+                <div class="form-card mb-0">
+                    <div class="section-title" style="background:#ddd;margin:-1.5rem -1.5rem 1rem;padding:0.5rem 1rem">Patient's Details</div>
+                    <div class="row g-2">
+                        <div class="col-md-2"><label class="small">Bill No</label><input name="bill_no" class="form-control form-control-sm"></div>
+                        <div class="col-md-2"><label class="small">Mobile</label><input name="mobile" class="form-control form-control-sm" placeholder="Mobile Number"></div>
+                        <div class="col-md-4"><label class="small">Patient Name</label><div class="input-group input-group-sm"><select class="form-select" style="max-width:60px"><option>Mr</option></select><input name="patient_name" class="form-control"></div></div>
+                        <div class="col-md-4"><label class="small">S/D/W/o Name</label><div class="input-group input-group-sm"><select class="form-select" style="max-width:60px"><option>S/o</option></select><input name="guardian" class="form-control"></div></div>
+                        <div class="col-md-3"><label class="small">Age</label><div class="input-group input-group-sm"><input name="age_y" class="form-control" placeholder="Y"><input name="age_m" class="form-control" placeholder="M"><input name="age_d" class="form-control" placeholder="D"></div></div>
+                        <div class="col-md-5"><label class="small">Address</label><input name="address" class="form-control form-control-sm"></div>
+                        <div class="col-md-2"><label class="small">Consultant</label><select name="consultant" class="form-select form-select-sm"><option>-- Self --</option></select></div>
+                        <div class="col-md-2"><label class="small">Referred By</label><input name="referred" class="form-control form-control-sm" value="SELF"></div>
+                        <div class="col-md-6"><label class="small">Remarks</label><input name="remarks" class="form-control form-control-sm" placeholder="Note"></div>
+                        <div class="col-md-3"><label class="small">Ayushman No</label><input name="ayushman" class="form-control form-control-sm" placeholder="12-1234-1234-1234"></div>
+                        <div class="col-md-3"><label class="small">ID Proof</label><div class="input-group input-group-sm"><select class="form-select"><option>Aadhar</option></select><input class="form-control" placeholder="ID Number"></div></div>
+                        <div class="col-md-2"><label class="small">Time</label><input type="time" name="time" class="form-control form-control-sm"></div>
+                        <div class="col-md-2"><label class="small">Date</label><input type="date" name="date" class="form-control form-control-sm" value="{{ today }}"></div>
+                    </div>
+                    <table class="hms-table mt-3"><thead><tr><th>Test Name</th><th>Rate</th><th>Unit</th><th>Amount</th><th>Remove</th></tr></thead>
+                    <tbody id="selectedTestsBody"></tbody></table>
+                    <div class="mt-2 small">Total: Rs.<span id="labTotal">0</span> | Discount: Rs.<input type="number" id="labDiscount" style="width:80px" value="0"></div>
+                </div>
+                <div class="lab-footer-bar">
+                    <strong>Total</strong> <span class="badge bg-success fs-6" id="labTotalBadge">0</span>
+                    <label class="small mb-0">Discount</label><input type="number" class="form-control form-control-sm" style="width:80px" id="labDiscount2">
+                    <label class="small mb-0">Waive Off</label><input type="number" class="form-control form-control-sm" style="width:80px">
+                    <label class="small mb-0">Deposit</label><input type="number" class="form-control form-control-sm" style="width:80px">
+                    <label class="small mb-0">Due</label><input type="number" class="form-control form-control-sm" style="width:80px" id="labDue" readonly>
+                    <label class="small mb-0">Mode</label><select class="form-select form-select-sm" style="width:100px"><option>Cash</option><option>UPI</option></select>
+                    <button type="submit" class="btn btn-primary ms-auto">Submit</button>
+                </div>
+            </div>
+            <div class="test-panel">
+                <div class="p-2 border-bottom d-flex gap-2 align-items-center">
+                    <input type="text" class="form-control form-control-sm" placeholder="SEARCH TEST" id="testSearch" style="flex:1">
+                    <a href="{% url 'lab:test_list' %}" class="btn btn-sm btn-outline-primary text-nowrap" title="Manage Tests &amp; Fees">
+                        <i class="bi bi-flask"></i>
+                        Tests &amp; Fees
+                    </a>
+
+                </div>
+                <div class="small text-muted px-2">Select to Enter Quantity</div>
+                {% for t in tests %}
+                <label class="test-item">
+                    <input type="checkbox" class="test-checkbox" name="tests" value="{{ t.id }}" data-name="{{ t.name }}" data-rate="{{ t.rate }}">
+                    <span>{{ t.name }}</span>
+                    <input type="number" value="1" class="form-control form-control-sm" style="width:50px" disabled>
+                    <span>Rs {{ t.rate }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

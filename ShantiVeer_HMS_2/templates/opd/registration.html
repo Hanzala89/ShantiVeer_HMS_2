@@ -1,0 +1,106 @@
+{% extends 'base_module.html' %}
+{% block title %}OPD Registration{% endblock %}
+{% block page_title %}OPD Registration{% endblock %}
+{% block content %}
+<div class="page-container">
+    <div class="form-card">
+        <h2>Hospital OPD Registration</h2>
+        <form method="post" id="opdForm">
+            {% csrf_token %}
+            <div class="row g-2 mb-3 align-items-end">
+                <div class="col-auto"><button type="button" class="btn-cyan" data-bs-toggle="modal" data-bs-target="#uhidModal"><i class="bi bi-search"></i> Search UHID</button></div>
+                <div class="col-md-2"><label class="form-label small">OPD No</label><input type="text" name="opd_no" class="form-control" value="{{ opd_no }}" readonly></div>
+                <div class="col-md-2"><label class="form-label small">UHID</label><input type="text" name="uhid" class="form-control" id="uhidField" value="{{ initial.patient.uhid|default:'' }}"></div>
+                <div class="col-md-2"><label class="form-label small">Date</label><input type="date" name="date" class="form-control" value="{{ initial.visit.date|default:today }}"></div>
+                <div class="col-md-2"><label class="form-label small">Time</label><input type="time" name="time" class="form-control" value="{{ initial.visit.time|default:now_time }}"></div>
+            </div>
+
+            <div class="section-title"><i class="bi bi-person"></i> Patient Details</div>
+            <div class="row g-2">
+
+                <div class="col-md-1"><label class="form-label small">Title</label><select name="title" class="form-select"><option>Mr</option><option>Mrs</option><option>Ms</option><option>Dr</option></select></div>
+                <div class="col-md-3"><label class="form-label small">Patient Name</label><input type="text" name="patient_name" class="form-control" value="{{ initial.patient.name|default:'' }}" required></div>
+                <div class="col-md-2"><label class="form-label small">Phone</label><input type="text" name="phone" class="form-control" value="{{ initial.patient.mobile|default:'' }}"></div>
+                <div class="col-md-2"><label class="form-label small">Referral</label><input type="text" name="referral" class="form-control" value="{{ initial.visit.referral|default:'' }}"></div>
+                <div class="col-md-1"><label class="form-label small">Age</label><input type="number" name="age" class="form-control" value="{{ initial.patient.age_years|default:'' }}"></div>
+                <div class="col-md-1"><label class="form-label small">Gender</label><select name="gender" class="form-select">
+                    <option value="Male" {% if initial.patient.gender == 'Male' %}selected{% endif %}>Male</option>
+                    <option value="Female" {% if initial.patient.gender == 'Female' %}selected{% endif %}>Female</option>
+                    <option value="Other" {% if initial.patient.gender == 'Other' %}selected{% endif %}>Other</option>
+                </select></div>
+                <div class="col-md-2"><label class="form-label small">DOB</label><input type="date" name="dob" class="form-control" value=""></div>
+                <div class="col-12"><label class="form-label small">Address</label><input type="text" name="address" class="form-control" value="{{ initial.patient.address|default:'' }}"></div>
+            </div>
+
+                <div class="section-title"><i class="bi bi-search"></i> Medical Tests</div>
+
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small">Test Add</label>
+                    <button type="button" class="btn btn-info" onclick="addTestRow()">+ Test Add</button>
+                </div>
+                <div class="col-12">
+                    <div id="testsContainer" class="mt-1">
+                        <!-- dynamically added rows -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-title"><i class="bi bi-cash"></i> Payment Details</div>
+            <div class="row g-2">
+                <div class="col-md-3"><label class="form-label small">Doctor Name</label><input type="text" name="doctor" class="form-control" value="{{ initial.visit.doctor_name|default:'' }}" placeholder="Type doctor name..."></div>
+                <div class="col-md-1"><label class="form-label small">Fees</label><input type="number" name="fees" class="form-control" value="{{ initial.visit.fees|default:500 }}" id="opdFees"></div>
+                <div class="col-md-2"><label class="form-label small">Head</label><input type="text" name="head" class="form-control" value="{{ initial.visit.head|default:'Opd Consultation' }}"></div>
+                <div class="col-md-1"><label class="form-label small">Discount</label><input type="number" name="discount" class="form-control" value="{{ initial.visit.discount|default:0 }}" id="opdDiscount"></div>
+                <div class="col-md-2"><label class="form-label small">Total Amount</label><input type="number" name="total" class="form-control" id="opdTotal" value="500" readonly></div>
+                <div class="col-md-1"><label class="form-label small">Payment Mode</label><select name="payment_mode" class="form-select"><option>Cash</option><option>UPI</option><option>Card</option><option>Cheque</option></select></div>
+                <div class="col-md-2"><label class="form-label small">Reference Info</label><input type="text" name="reference" class="form-control" placeholder="UPI Ref No."></div>
+            </div>
+
+            <div class="text-center mt-4 gap-2">
+                <button type="submit" class="btn-save"><i class="bi bi-save"></i> Save / Update</button>
+                <a href="{% url 'prescription:list' %}" class="btn-view ms-2"><i class="bi bi-list"></i> View All</a>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="modal fade" id="uhidModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">Search UHID</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body"><input type="text" class="form-control" id="uhidSearchInput" placeholder="Enter UHID"><div id="uhidResults" class="mt-2"></div></div>
+</div></div></div>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.getElementById('opdFees')?.addEventListener('input', calcOpd);
+document.getElementById('opdDiscount')?.addEventListener('input', calcOpd);
+function calcOpd() {
+    const f = parseFloat(document.getElementById('opdFees').value) || 0;
+    const d = parseFloat(document.getElementById('opdDiscount').value) || 0;
+    document.getElementById('opdTotal').value = Math.max(0, f - d);
+}
+
+// NOTE: This UI currently adds empty test rows; backend wiring is required to save selections & compute fees.
+let testIndex = 0;
+function addTestRow(){
+    const container = document.getElementById('testsContainer');
+    if(!container) return;
+    const row = document.createElement('div');
+    row.className = 'row g-2 mb-2 align-items-end';
+    row.innerHTML = `
+        <div class="col-md-6">
+            <label class="form-label small">Test</label>
+            <input type="text" class="form-control" name="test_name_${testIndex}" placeholder="Type test name" />
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small">Fees</label>
+            <input type="number" class="form-control" name="test_fees_${testIndex}" placeholder="0" />
+        </div>
+        <div class="col-md-1">
+            <button type="button" class="btn btn-danger" onclick="this.closest('.row').remove()">X</button>
+        </div>
+    `;
+    container.appendChild(row);
+    testIndex += 1;
+}
+</script>
+{% endblock %}

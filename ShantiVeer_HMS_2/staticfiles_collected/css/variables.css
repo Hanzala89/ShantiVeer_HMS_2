@@ -1,0 +1,20 @@
+:root {
+    --navy: #0f1c2e;
+    --navy-light: #1a2d42;
+    --cyan: #00d4ff;
+    --cyan-dark: #00b8d9;
+    --primary-blue: #1e40af;
+    --header-cyan: #00e5ff;
+    --green-header: #2e7d32;
+    --green-btn: #4caf50;
+    --bg-light: #f4f7f6;
+    --card-white: #ffffff;
+    --text-dark: #1e293b;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --danger: #dc2626;
+    --warning: #f59e0b;
+    --success: #059669;
+    --ipd-nav: #0d2137;
+    --sidebar-width: 240px;
+}

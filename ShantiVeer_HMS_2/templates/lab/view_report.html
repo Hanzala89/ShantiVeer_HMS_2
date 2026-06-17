@@ -1,0 +1,12 @@
+{% extends 'base_cyan.html' %}
+{% block title %}Lab Report{% endblock %}
+{% block page_title %}Lab Report{% endblock %}
+{% block content %}
+<div class="page-container"><div class="form-card">
+    <h2>View Lab Report</h2>
+    <p><strong>Bill:</strong> {{ report.bill_no }} | <strong>Patient:</strong> {{ report.patient }} | <strong>Date:</strong> {{ report.date }}</p>
+    <table class="hms-table"><thead><tr><th>Test</th><th>Result</th><th>Unit</th><th>Reference</th></tr></thead>
+    <tbody>{% for t in report.test_results %}<tr><td>{{ t.name }}</td><td>{{ t.result }}</td><td>{{ t.unit }}</td><td>{{ t.ref }}</td></tr>{% endfor %}</tbody></table>
+    <button class="btn btn-warning mt-3" onclick="window.print()">Print Report</button>
+</div></div>
+{% endblock %}
